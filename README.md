@@ -1,0 +1,1 @@
+# preventing-cross-site-request-forgery-using-double-submit-cookie-pattern
