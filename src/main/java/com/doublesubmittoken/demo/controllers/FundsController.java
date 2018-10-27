@@ -28,16 +28,11 @@ public class FundsController {
 
     @PostMapping("/transfer")
     public String transferFunds(@ModelAttribute FundTransfer fundTransfer, HttpServletRequest request){
-        Cookie[] cookies = request.getCookies();
-        String sessionId = authenticationService.sessionIdFromCookies(cookies);
-
         logger.info("Request received for transferFunds...");
-        logger.info("Validating token...");
+        logger.info("Authenticating user session...");
 
-        if (authenticationService.isAuthenticated(cookies) &&
-                authenticationService.validateCSRFToken(sessionId, fundTransfer.getCsrf())){
-
-            logger.info("Token validated...");
+        if (authenticationService.isAuthenticated(request.getCookies(), fundTransfer.getCsrf())){
+            logger.error("Success..");
             return "redirect:/home?status=success";
         }
         logger.error("User not authenticated!!!");
