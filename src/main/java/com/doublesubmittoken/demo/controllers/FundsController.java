@@ -27,11 +27,11 @@ public class FundsController {
     AuthenticationService authenticationService;
 
     @PostMapping("/transfer")
-    public String transferFunds(@ModelAttribute FundTransfer fundTransfer, HttpServletRequest request){
+    public String transferFunds(@ModelAttribute FundTransfer fundTransfer, HttpServletRequest request) {
         logger.info("Request received for transferFunds...");
         logger.info("Authenticating user session...");
 
-        if (authenticationService.isAuthenticated(request.getCookies(), fundTransfer.getCsrf())){
+        if (authenticationService.isAuthenticated(request.getCookies(), fundTransfer.getCsrf())) {
             logger.error("Success..");
             return "redirect:/home?status=success";
         }

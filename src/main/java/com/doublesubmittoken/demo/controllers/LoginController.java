@@ -29,11 +29,11 @@ public class LoginController {
     AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    public String login(@ModelAttribute Credentials credentials, HttpServletResponse response){
+    public String login(@ModelAttribute Credentials credentials, HttpServletResponse response) {
         String username = credentials.getUsername();
         System.out.println(username);
 
-        if(authenticationService.isUserAuthenticated(username, credentials.getPassword())){
+        if (authenticationService.isUserAuthenticated(username, credentials.getPassword())) {
 
             logger.debug("Successfully authenticated user...");
             Cookie sessionCookie = new Cookie("sessionID", authenticationService.generateSessionId(username));

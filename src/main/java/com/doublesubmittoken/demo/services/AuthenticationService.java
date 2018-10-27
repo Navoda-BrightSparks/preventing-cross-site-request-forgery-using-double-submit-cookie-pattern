@@ -66,12 +66,12 @@ public class AuthenticationService {
      *
      * @return
      */
-    public boolean isAuthenticated(Cookie[] cookies, String csrf){
+    public boolean isAuthenticated(Cookie[] cookies, String csrf) {
         Map<String, String> cookieStore = getCookies(cookies);
 
         // Check if the user session is valid and if the csrf token
-        if(isUserSessionValid(cookieStore.get("username"), cookieStore.get("sessionID"))
-                && validateCSRFToken(cookieStore.get("Csrf-token"), csrf)){
+        if (isUserSessionValid(cookieStore.get("username"), cookieStore.get("sessionID"))
+                && validateCSRFToken(cookieStore.get("Csrf-token"), csrf)) {
             logger.info("Token validated...");
             return true;
         }
