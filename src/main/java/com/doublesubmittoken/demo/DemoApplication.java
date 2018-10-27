@@ -1,5 +1,6 @@
 package com.doublesubmittoken.demo;
 
+import com.doublesubmittoken.demo.models.UserCredentialsStore;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -8,5 +9,6 @@ public class DemoApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(DemoApplication.class, args);
+        UserCredentialsStore.getUserCredentialsStore().addInitialData();
     }
 }
