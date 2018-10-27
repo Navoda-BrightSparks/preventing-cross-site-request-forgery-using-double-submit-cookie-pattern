@@ -7,10 +7,14 @@ import com.doublesubmittoken.demo.models.UserCredentialsStore;
 import com.doublesubmittoken.demo.utils.EncryptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.Cookie;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -19,17 +23,17 @@ import java.util.UUID;
  * Created by navodasathsarani on 9/5/18.
  */
 
+
 @Service
 public class AuthenticationService {
+
+    private Logger logger = LoggerFactory.getLogger(AuthenticationService.class);
 
     @Value("${app.username}")
     private String usernameStored;
 
     @Value("${app.password}")
     private String passwordStored;
-    private Logger logger = LoggerFactory.getLogger(AuthenticationService.class);
-
-
 
     UserCredentialsStore userCredentialsStore = UserCredentialsStore.getUserCredentialsStore();
 
@@ -43,39 +47,65 @@ public class AuthenticationService {
     public boolean isUserAuthenticated(String username, String password){
         try {
             logger.debug("Authenticating user...");
-            System.out.println(usernameStored);
             if(username.equals(usernameStored) && EncryptionUtils.getHashValue(password).equalsIgnoreCase(passwordStored)){
                 return true;
             }
             else return false;
-               //     && EncryptionUtils.getHashValue(password).equalsIgnoreCase(applicationConfiguration.getPassword()));
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException e) {
             logger.error("Failed to authenticate user", e);
             return false;
         }
     }
 
+
     /**
-     * Authenticates user using cookies
+     * Authenticates user's session and csrf token
+     *
+     * @param cookies
+     * @param csrf
+     *
+     * @return
+     */
+    public boolean isAuthenticated(Cookie[] cookies, String csrf){
+        Map<String, String> cookieStore = getCookies(cookies);
+
+        // Check if the user session is valid and if the csrf token
+        if(isUserSessionValid(cookieStore.get("username"), cookieStore.get("sessionID"))
+                && validateCSRFToken(cookieStore.get("Csrf-token"), csrf)){
+            logger.info("Token validated...");
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Authenticates users session
      *
      * @param cookies
      * @return
      */
     public boolean isAuthenticated(Cookie[] cookies){
-        String session = "";
-        String username = "";
+        Map<String, String> cookieStore = getCookies(cookies);
 
-        if (null != cookies && cookies.length > 0){
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("sessionID")){
-                    session = cookie.getValue();
-                } else if (cookie.getName().equals("username")){
-                    username = cookie.getValue();
-                }
-            }
+        // Check if the user session is valid and if the csrf token
+        if(isUserSessionValid(cookieStore.get("username"), cookieStore.get("sessionID"))){
+            logger.info("Token validated...");
+            return true;
         }
 
-        return (isUserSessionValid(username, session));
+        return false;
+    }
+
+    public Map<String, String> getCookies(Cookie[] cookies){
+
+        Map<String, String> cookieStore = new HashMap<>();
+        if (null != cookies && cookies.length > 0){
+            for (Cookie cookie : cookies) {
+                cookieStore.put(cookie.getName(), cookie.getValue());
+            }
+        }
+        return cookieStore;
     }
 
     /**
@@ -127,10 +157,7 @@ public class AuthenticationService {
 
         // Store sessionID in UserCredentialsStore
         Credentials credentials = userCredentialsStore.findCredentials(username);
-        System.out.println("sessionId"+sessionId);
         credentials.setSessionID(sessionId);
-        logger.debug("Generating anti-csrf token...");
-        generateToken(sessionId);
         userCredentialsStore.saveCredentials(username, credentials);
 
         logger.debug("Storing user session...");
@@ -141,35 +168,25 @@ public class AuthenticationService {
     /**
      * Generates a new anti-CSRF token
      *
-     * @param session
      * @return
      */
-    public String generateToken(String session){
+    public String generateToken(){
         logger.debug("Generating user anti-CSRF token...");
 
-        // Generate new token for user -> SessionID + timestamp
-        String token = session + System.currentTimeMillis();
+        // Generate new token for user
+        return UUID.randomUUID().toString();
 
-        // Store sessionID in SessionStore
-        SessionStore.getUserCredentialsStore().addSessionToken(session, token);
-
-        logger.debug("User session store...");
-
-        return token;
     }
 
     /**
      * Validates if the CSRF token is valid
      *
-     * @param sessionID
-     * @param token
+     * @param tokenInCookie
+     * @param tokenInForm
      * @return
      */
-    public boolean validateCSRFToken(String sessionID, String token){
-        if (null != token){
-            return token.equals(SessionStore.getUserCredentialsStore().getTokenFromSession(sessionID));
-        }
-        return false;
+    public boolean validateCSRFToken(String tokenInCookie, String tokenInForm){
+        return (tokenInCookie.equals(tokenInForm));
     }
 
 }
